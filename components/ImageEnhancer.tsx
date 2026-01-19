@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { enhanceProductImage } from '../services/geminiService';
 import { LoadingState } from '../types';
-import { Wand2, Upload, Download, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { Wand2, Upload, Download, ArrowRight, Image as ImageIcon, FileText } from 'lucide-react';
 
 const ImageEnhancer: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
   const [previewOriginal, setPreviewOriginal] = useState<string | null>(null);
   const [enhancedImage, setEnhancedImage] = useState<string | null>(null);
+  const [enhancementGuide, setEnhancementGuide] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<LoadingState>('idle');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -17,18 +18,28 @@ const ImageEnhancer: React.FC = () => {
       setOriginalImage(file);
       setPreviewOriginal(URL.createObjectURL(file));
       setEnhancedImage(null);
+      setEnhancementGuide(null);
     }
   };
 
   const handleEnhance = async () => {
     if (!originalImage || !description) return;
     setStatus('loading');
+    setEnhancedImage(null);
+    setEnhancementGuide(null);
+    
     const result = await enhanceProductImage(originalImage, description);
+    
     if (result) {
-        setEnhancedImage(result);
+      if (result.type === 'image') {
+        setEnhancedImage(result.data);
         setStatus('success');
+      } else if (result.type === 'guide') {
+        setEnhancementGuide(result.data);
+        setStatus('success');
+      }
     } else {
-        setStatus('error');
+      setStatus('error');
     }
   };
 
@@ -76,7 +87,7 @@ const ImageEnhancer: React.FC = () => {
                 >
                      {status === 'loading' ? (
                          <>
-                            <Wand2 className="w-5 h-5 animate-spin mr-2" /> Enhancing...
+                            <Wand2 className="w-5 h-5 animate-spin mr-2" /> Analyzing & Enhancing...
                          </>
                      ) : (
                          <>Enhance Photo <ArrowRight className="w-4 h-4 ml-2" /></>
@@ -93,6 +104,23 @@ const ImageEnhancer: React.FC = () => {
                      <a href={enhancedImage} download="styfi-enhanced.png" className="flex items-center text-rose-600 font-medium hover:text-rose-800">
                         <Download className="w-4 h-4 mr-2" /> Download Studio Quality
                      </a>
+                </div>
+            ) : enhancementGuide ? (
+                <div className="w-full h-full overflow-y-auto">
+                    <div className="bg-white rounded-lg p-6 shadow-sm">
+                        <div className="flex items-center mb-4 text-rose-600">
+                            <FileText className="w-6 h-6 mr-2" />
+                            <h3 className="font-bold text-lg">Professional Enhancement Guide</h3>
+                        </div>
+                        <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                            {enhancementGuide}
+                        </div>
+                        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <p className="text-sm text-blue-800">
+                                <strong>Note:</strong> Image generation is temporarily unavailable. Use this professional guide to manually enhance your product photos or try again later.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             ) : (
                 <div className="text-center text-gray-400">
