@@ -1,6 +1,6 @@
 import { OutfitSuggestion, TrendReport } from "../types";
 
-// Update this to your deployed Cloudflare Worker URL
+// Replace with your actual Cloudflare Worker URL after deployment
 const API_BASE_URL = 'https://styfi-backend.vishwajeetadkine705.workers.dev';
 
 export const fileToGenerativePart = async (file: File): Promise<string> => {
@@ -77,15 +77,24 @@ export const enhanceProductImage = async (imageFile: File, description: string):
   }
 };
 
-export const tryOnVirtual = async (userImage: File, productImageUrl: string): Promise<string | null> => {
+export const tryOnVirtual = async (userImage: File, productImage: string): Promise<string | null> => {
   try {
     const userBase64 = await fileToGenerativePart(userImage);
     
-    // Fetch product image and convert to base64
-    const productRes = await fetch(productImageUrl);
-    const productBlob = await productRes.blob();
-    const productFile = new File([productBlob], "product.jpg", { type: productBlob.type });
-    const productBase64 = await fileToGenerativePart(productFile);
+    const productBase64 = await (async () => {
+      try {
+        const res = await fetch(productImage);
+        const blob = await res.blob();
+        return await fileToGenerativePart(new File([blob], "product.jpg", { type: blob.type }));
+      } catch (e) {
+        console.error("Could not fetch product image", e);
+        return null; 
+      }
+    })();
+
+    if (!productBase64) {
+      throw new Error("Could not process product image");
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/virtual-tryon`, {
       method: 'POST',
@@ -94,7 +103,7 @@ export const tryOnVirtual = async (userImage: File, productImageUrl: string): Pr
         userImageData: userBase64,
         userMimeType: userImage.type,
         productImageData: productBase64,
-        productMimeType: productFile.type
+        productMimeType: "image/jpeg"
       })
     });
 
