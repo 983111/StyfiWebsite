@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Product, LoadingState } from '../types';
 import { tryOnVirtual } from '../services/geminiService';
-import { Camera, Upload, RefreshCw } from 'lucide-react';
+import { Camera, Upload, RefreshCw, FileText } from 'lucide-react';
 import ProductCard from './ProductCard';
 
 interface VirtualTryOnProps {
@@ -13,6 +13,7 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ products }) => {
   const [userImage, setUserImage] = useState<File | null>(null);
   const [userImagePreview, setUserImagePreview] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [visualizationGuide, setVisualizationGuide] = useState<string | null>(null);
   const [status, setStatus] = useState<LoadingState>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -21,19 +22,29 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ products }) => {
       const file = e.target.files[0];
       setUserImage(file);
       setUserImagePreview(URL.createObjectURL(file));
-      setGeneratedImage(null); // Reset result
+      setGeneratedImage(null);
+      setVisualizationGuide(null);
     }
   };
 
   const handleGenerate = async () => {
     if (!userImage || !selectedProduct) return;
     setStatus('loading');
+    setGeneratedImage(null);
+    setVisualizationGuide(null);
+    
     const result = await tryOnVirtual(userImage, selectedProduct.image);
+    
     if (result) {
-        setGeneratedImage(result);
+      if (result.type === 'image') {
+        setGeneratedImage(result.data);
         setStatus('success');
+      } else if (result.type === 'guide') {
+        setVisualizationGuide(result.data);
+        setStatus('success');
+      }
     } else {
-        setStatus('error');
+      setStatus('error');
     }
   };
 
@@ -115,6 +126,23 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ products }) => {
                 <div className="relative w-full h-full flex flex-col items-center">
                     <img src={generatedImage} alt="Try On Result" className="max-h-[550px] rounded-lg shadow-md object-contain" />
                     <span className="mt-4 text-xs text-rose-500 font-medium bg-rose-50 px-3 py-1 rounded-full">AI Generated Preview</span>
+                </div>
+            ) : visualizationGuide ? (
+                <div className="w-full h-full overflow-y-auto pt-12">
+                    <div className="bg-gradient-to-br from-rose-50 to-white rounded-lg p-6 border border-rose-200">
+                        <div className="flex items-center mb-4 text-rose-600">
+                            <FileText className="w-6 h-6 mr-2" />
+                            <h4 className="font-bold text-lg">Visualization Description</h4>
+                        </div>
+                        <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap mb-6">
+                            {visualizationGuide}
+                        </div>
+                        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <p className="text-sm text-blue-800">
+                                <strong>Note:</strong> Image generation is temporarily unavailable. This description shows how the outfit would look. Try again later for visual preview.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             ) : (
                 <div className="text-center text-gray-400">
