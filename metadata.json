@@ -1,0 +1,8 @@
+{
+  "name": "Styfi",
+  "description": "An AI-powered marketplace for small businesses featuring Outfit Composer, Trend Detection, and Virtual Try-On capabilities.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
