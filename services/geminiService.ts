@@ -1,7 +1,7 @@
 import { OutfitSuggestion, TrendReport } from "../types";
 
 // Update this to your deployed Cloudflare Worker URL
-const API_BASE_URL = 'https://your-worker.your-subdomain.workers.dev';
+const API_BASE_URL = 'https://styfi-backend.vishwajeetadkine705.workers.dev';
 
 export const fileToGenerativePart = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
