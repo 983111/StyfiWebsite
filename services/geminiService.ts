@@ -100,7 +100,7 @@ export const composeOutfit = async (productName: string, productCategory: string
   }
 };
 
-export const enhanceProductImage = async (imageFile: File, description: string): Promise<string | null> => {
+export const enhanceProductImage = async (imageFile: File, description: string): Promise<{type: 'image' | 'guide', data: string} | null> => {
   try {
     const base64Data = await fileToGenerativePart(imageFile);
     
@@ -121,15 +121,29 @@ export const enhanceProductImage = async (imageFile: File, description: string):
     }
     
     const data = await response.json();
-    return `data:${data.mimeType};base64,${data.imageData}`;
+    
+    // Check if we got an image or a guide
+    if (data.method === 'imagen' && data.imageData) {
+      return {
+        type: 'image',
+        data: `data:${data.mimeType};base64,${data.imageData}`
+      };
+    } else if (data.method === 'guide' && data.enhancementGuide) {
+      return {
+        type: 'guide',
+        data: data.enhancementGuide
+      };
+    }
+    
+    throw new Error('Unexpected response format');
   } catch (error) {
     console.error("Error enhancing image:", error);
-    alert("Failed to enhance image. Please check your API configuration and try again.");
+    alert(`Enhancement failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please check console for details.`);
     return null;
   }
 };
 
-export const tryOnVirtual = async (userImage: File, productImage: string): Promise<string | null> => {
+export const tryOnVirtual = async (userImage: File, productImage: string): Promise<{type: 'image' | 'guide', data: string} | null> => {
   try {
     const userBase64 = await fileToGenerativePart(userImage);
     
@@ -168,10 +182,24 @@ export const tryOnVirtual = async (userImage: File, productImage: string): Promi
     }
     
     const data = await response.json();
-    return `data:${data.mimeType};base64,${data.imageData}`;
+    
+    // Check if we got an image or a guide
+    if (data.method === 'imagen' && data.imageData) {
+      return {
+        type: 'image',
+        data: `data:${data.mimeType};base64,${data.imageData}`
+      };
+    } else if (data.method === 'guide' && data.visualizationGuide) {
+      return {
+        type: 'guide',
+        data: data.visualizationGuide
+      };
+    }
+    
+    throw new Error('Unexpected response format');
   } catch (error) {
     console.error("Error virtual try on:", error);
-    alert("Failed to generate virtual try-on. Please check your API configuration and try again.");
+    alert(`Virtual try-on failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return null;
   }
 };
