@@ -8,7 +8,10 @@ import VirtualTryOn from './components/VirtualTryOn';
 import ImageEnhancer from './components/ImageEnhancer';
 import { AppView, Product } from './types';
 
-// Mock Data
+/**
+ * Mock product data for demonstration
+ * In production, this would be fetched from an API
+ */
 const MOCK_PRODUCTS: Product[] = [
   {
     id: '1',
@@ -66,28 +69,48 @@ const MOCK_PRODUCTS: Product[] = [
   }
 ];
 
+/**
+ * Main Application Component
+ */
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.HOME);
 
-  const renderView = () => {
+  /**
+   * Renders the appropriate view based on current navigation state
+   */
+  const renderView = (): React.ReactNode => {
     switch (currentView) {
       case AppView.HOME:
         return (
           <>
             <Hero setView={setCurrentView} />
-            <Marketplace products={MOCK_PRODUCTS} onSelectProduct={() => setCurrentView(AppView.OUTFIT_COMPOSER)} />
+            <Marketplace 
+              products={MOCK_PRODUCTS} 
+              onSelectProduct={() => setCurrentView(AppView.OUTFIT_COMPOSER)} 
+            />
           </>
         );
+      
       case AppView.MARKETPLACE:
-        return <Marketplace products={MOCK_PRODUCTS} onSelectProduct={() => setCurrentView(AppView.OUTFIT_COMPOSER)} />;
+        return (
+          <Marketplace 
+            products={MOCK_PRODUCTS} 
+            onSelectProduct={() => setCurrentView(AppView.OUTFIT_COMPOSER)} 
+          />
+        );
+      
       case AppView.OUTFIT_COMPOSER:
         return <OutfitComposer products={MOCK_PRODUCTS} />;
+      
       case AppView.TREND_DETECTOR:
         return <TrendDetector />;
+      
       case AppView.VIRTUAL_TRY_ON:
         return <VirtualTryOn products={MOCK_PRODUCTS} />;
+      
       case AppView.IMAGE_ENHANCER:
         return <ImageEnhancer />;
+      
       default:
         return <Hero setView={setCurrentView} />;
     }
@@ -96,21 +119,24 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-rose-50/50">
       <Navbar currentView={currentView} setView={setCurrentView} />
+      
       <main className="pb-16">
         {renderView()}
       </main>
       
       <footer className="bg-white border-t border-rose-100 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center">
-                <div>
-                     <span className="text-xl font-bold text-gray-900">Styfi</span>
-                     <p className="text-gray-500 text-sm mt-1">Empowering small businesses with AI.</p>
-                </div>
-                <div className="text-sm text-gray-400">
-                    © 2024 Styfi Inc.
-                </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-xl font-bold text-gray-900">Styfi</span>
+              <p className="text-gray-500 text-sm mt-1">
+                Empowering small businesses with AI-powered fashion technology.
+              </p>
             </div>
+            <div className="text-sm text-gray-400">
+              © {new Date().getFullYear()} Styfi Inc. All rights reserved.
+            </div>
+          </div>
         </div>
       </footer>
     </div>
