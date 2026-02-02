@@ -98,15 +98,11 @@ The application integrates with a Cloudflare Worker backend for AI processing:
 - Image enhancement
 - Virtual try-on generation
 
-Backend URL: `https://styfi-backend.vishwajeetadkine705.workers.dev`
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License
-
-Copyright © 2024 Styfi Inc. All rights reserved.
 
 ## Support
 
