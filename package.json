@@ -1,16 +1,13 @@
 {
   "name": "styfi",
   "version": "1.0.0",
-  "description": "AI-powered fashion marketplace connecting customers with small businesses",
+  "description": "AI-powered fashion marketplace",
   "private": true,
   "type": "module",
-  "author": "Styfi Inc.",
-  "license": "UNLICENSED",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^19.2.3",
@@ -25,8 +22,5 @@
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }
