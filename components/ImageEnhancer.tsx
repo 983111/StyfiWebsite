@@ -18,6 +18,15 @@ const ImageEnhancer: React.FC = () => {
   const [aiFeatures, setAiFeatures] = useState({
     sharpen: false,
     studioLighting: false, 
+    smartTone: false,
+  });
+
+  const [smartToneConfig, setSmartToneConfig] = useState({
+    blackPoint: 0,
+    whitePoint: 255,
+    gamma: 1,
+    shadowLift: 0,
+    highlightRollOff: 0,
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -32,9 +41,43 @@ const ImageEnhancer: React.FC = () => {
       setPreviewOriginal(url);
       setEnhancedImage(url);
       setFilters({ brightness: 100, contrast: 100, saturation: 100, warmth: 0 });
-      setAiFeatures({ sharpen: false, studioLighting: false });
+      setAiFeatures({ sharpen: false, studioLighting: false, smartTone: false });
+      setSmartToneConfig({ blackPoint: 0, whitePoint: 255, gamma: 1, shadowLift: 0, highlightRollOff: 0 });
       setIsAnalyzed(false);
     }
+  };
+
+  const applySmartTone = (
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    config: typeof smartToneConfig
+  ) => {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const pixels = imageData.data;
+
+    const range = Math.max(1, config.whitePoint - config.blackPoint);
+
+    for (let i = 0; i < pixels.length; i += 4) {
+      for (let c = 0; c < 3; c++) {
+        let normalized = (pixels[i + c] - config.blackPoint) / range;
+        normalized = Math.min(1, Math.max(0, normalized));
+
+        // Gamma and tonal curve for a more natural enhancement.
+        let toned = Math.pow(normalized, config.gamma);
+
+        if (config.shadowLift > 0) {
+          toned += (1 - toned) * config.shadowLift * (1 - toned);
+        }
+        if (config.highlightRollOff > 0) {
+          toned -= config.highlightRollOff * toned * toned;
+        }
+
+        pixels[i + c] = Math.round(Math.min(255, Math.max(0, toned * 255)));
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
   };
 
   // Advanced Unsharp Mask Sharpening
@@ -115,7 +158,9 @@ const ImageEnhancer: React.FC = () => {
         // Advanced Statistical Analysis (Histogram-based)
         let minLum = 255, maxLum = 0;
         let totalLum = 0;
+        let totalLumSq = 0;
         let rSum = 0, gSum = 0, bSum = 0;
+        const histogram = new Array(256).fill(0);
         
         for (let i = 0; i < data.length; i += 4) {
             const r = data[i];
@@ -128,6 +173,9 @@ const ImageEnhancer: React.FC = () => {
             if (lum < minLum) minLum = lum;
             if (lum > maxLum) maxLum = lum;
             totalLum += lum;
+            totalLumSq += lum * lum;
+
+            histogram[Math.round(lum)] += 1;
             
             rSum += r;
             gSum += g;
@@ -136,8 +184,30 @@ const ImageEnhancer: React.FC = () => {
         
         const pixelCount = data.length / 4;
         const avgLum = totalLum / pixelCount;
+        const lumStd = Math.sqrt(Math.max(0, (totalLumSq / pixelCount) - (avgLum * avgLum)));
         const avgR = rSum / pixelCount;
+        const avgG = gSum / pixelCount;
         const avgB = bSum / pixelCount;
+
+        let cumulative = 0;
+        let p2 = 0;
+        let p98 = 255;
+        for (let i = 0; i < histogram.length; i++) {
+          cumulative += histogram[i];
+          if (cumulative >= pixelCount * 0.02) {
+            p2 = i;
+            break;
+          }
+        }
+
+        cumulative = 0;
+        for (let i = histogram.length - 1; i >= 0; i--) {
+          cumulative += histogram[i];
+          if (cumulative >= pixelCount * 0.02) {
+            p98 = i;
+            break;
+          }
+        }
 
         // 1. Exposure & Brightness Correction
         let targetBrightness = 100;
@@ -165,7 +235,20 @@ const ImageEnhancer: React.FC = () => {
         }
         targetWarmth = Math.min(30, targetWarmth);
 
-        const targetSaturation = 120; 
+        let targetSaturation = 120;
+        if (lumStd < 42) targetSaturation = 132;
+        if (lumStd > 68) targetSaturation = 112;
+
+        const dynamicRange = Math.max(20, p98 - p2);
+        const smartToneGamma = avgLum < 110 ? 0.88 : avgLum > 165 ? 1.08 : 0.96;
+        const shadowLift = avgLum < 120 ? 0.15 : 0.08;
+        const highlightRollOff = avgLum > 150 ? 0.15 : 0.08;
+
+        // Small white balance assist when green/magenta cast exists.
+        const greenCast = avgG - ((avgR + avgB) / 2);
+        if (greenCast > 8) {
+          targetWarmth += 4;
+        }
 
         setFilters({
             brightness: Math.round(targetBrightness),
@@ -176,7 +259,16 @@ const ImageEnhancer: React.FC = () => {
 
         setAiFeatures({
             sharpen: true,
-            studioLighting: true
+            studioLighting: true,
+            smartTone: true,
+        });
+
+        setSmartToneConfig({
+            blackPoint: Math.max(0, p2 - 6),
+            whitePoint: Math.min(255, p2 + dynamicRange + 8),
+            gamma: smartToneGamma,
+            shadowLift,
+            highlightRollOff,
         });
         
         setIsAnalyzed(true);
@@ -207,12 +299,17 @@ const ImageEnhancer: React.FC = () => {
           ctx.filter = 'none';
 
           // 2. Pixel Manipulation (Smart Sharpen)
+          if (aiFeatures.smartTone) {
+            applySmartTone(ctx, canvas.width, canvas.height, smartToneConfig);
+          }
+
+          // 3. Pixel Manipulation (Smart Sharpen)
           if (aiFeatures.sharpen) {
              // Use Smart Sharpen with strength 0.3 and threshold 12 to avoid noise
              applySmartSharpen(ctx, canvas.width, canvas.height, 0.3, 12);
           }
 
-          // 3. Studio Lighting (Subtle Vignette + Center Fill)
+          // 4. Studio Lighting (Subtle Vignette + Center Fill)
           if (aiFeatures.studioLighting) {
              const gradient = ctx.createRadialGradient(
                 canvas.width / 2, canvas.height / 2, canvas.width * 0.15, // Inner
@@ -232,7 +329,7 @@ const ImageEnhancer: React.FC = () => {
           setIsProcessing(false);
         };
     });
-  }, [previewOriginal, filters, aiFeatures]);
+  }, [previewOriginal, filters, aiFeatures, smartToneConfig]);
 
   // Real-time update
   useEffect(() => {
@@ -248,7 +345,8 @@ const ImageEnhancer: React.FC = () => {
 
   const handleReset = () => {
     setFilters({ brightness: 100, contrast: 100, saturation: 100, warmth: 0 });
-    setAiFeatures({ sharpen: false, studioLighting: false });
+    setAiFeatures({ sharpen: false, studioLighting: false, smartTone: false });
+    setSmartToneConfig({ blackPoint: 0, whitePoint: 255, gamma: 1, shadowLift: 0, highlightRollOff: 0 });
     setIsAnalyzed(false);
   };
 
