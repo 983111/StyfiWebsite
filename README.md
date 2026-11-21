@@ -1,109 +1,89 @@
-# Styfi - AI-Powered Fashion Marketplace
+# Styfi
 
-An intelligent fashion marketplace platform that connects customers with unique small businesses, featuring AI-powered tools for outfit composition, trend detection, and virtual try-on capabilities.
+Styfi is a fashion marketplace prototype with AI-assisted styling and seller tools. The catalogue currently contains demo products; there is no checkout, payment processing or live seller inventory.
 
-## Features
+## AI features
 
-- **Curated Marketplace** - Browse unique products from small businesses worldwide
-- **AI Outfit Composer** - Get personalized outfit recommendations based on selected items
-- **Trend Detector** - Discover real-time fashion trends using AI market analysis
-- **Virtual Try-On** - Visualize how products look on you before purchasing
-- **Image Enhancer** - Professional product photography tools for sellers
+- **Outfit Composer** — sends the selected demo product name and category to the Cloudflare Worker and returns Gemini-generated styling suggestions.
+- **Trend Detector** — asks Gemini for fashion trend analysis by category. Scores are model-generated estimates; the feature does not currently ingest live sales, search or social-media data.
+- **Virtual Try-On** — sends the uploaded user photo and selected product image to the Worker and requests an edited try-on image.
+- **Seller Studio** — sends a seller's product image and editing instructions to the Worker and requests an improved product image.
 
-## Tech Stack
+The frontend does not call Gemini directly. The Gemini API key must remain a Cloudflare Worker secret.
 
-- **Frontend**: React 19 with TypeScript
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **Build Tool**: Vite
-- **AI Integration**: Google Generative AI (Gemini)
+## Stack
 
-## Getting Started
+- React 19 + TypeScript
+- Vite
+- Tailwind CSS
+- Cloudflare Workers
+- Google Gemini API
 
-### Prerequisites
+## Run the frontend
 
-- Node.js (v18 or higher)
-- npm or yarn
+Requirements: Node.js 18+ and npm.
 
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <your-repo-url>
-cd styfi
-```
-
-2. Install dependencies:
 ```bash
 npm install
-```
-
-3. Set up environment variables:
-Create a `.env.local` file in the root directory:
-```
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-4. Start the development server:
-```bash
+cp .env.example .env.local
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`
+On Windows PowerShell, use:
 
-### Building for Production
+```powershell
+Copy-Item .env.example .env.local
+npm run dev
+```
+
+Vite runs at `http://localhost:3000`.
+
+The `.env.local` file contains only the public Worker URL:
+
+```env
+VITE_API_BASE_URL=https://styfi-backend.vishwajeetadkine705.workers.dev
+```
+
+This URL is safe to expose in the browser. Never put `GEMINI_API_KEY` in a `VITE_*` variable or commit it to this repository.
+
+## Worker configuration
+
+The frontend expects these Worker routes:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| POST | `/api/trends` | Fashion trend analysis |
+| POST | `/api/compose-outfit` | Outfit recommendations |
+| POST | `/api/enhance-image` | Product image editing |
+| POST | `/api/virtual-tryon` | Virtual try-on image generation |
+| GET | `/api/health` | Worker health and model configuration |
+
+The Worker must have its Gemini API key configured as a Cloudflare secret. Its `APP_ORIGIN` must exactly match the deployed frontend origin. For local development, allow `http://localhost:3000` (the Vite port configured in this repository). If the frontend is deployed to Vercel, set `APP_ORIGIN` to that exact production domain and redeploy the Worker.
+
+To update the Worker secret:
+
+```bash
+npx wrangler secret put GEMINI_API_KEY
+```
+
+To deploy Worker source:
+
+```bash
+npm run worker:deploy
+```
+
+## Build
 
 ```bash
 npm run build
-```
-
-The production-ready files will be in the `dist` directory.
-
-### Preview Production Build
-
-```bash
 npm run preview
 ```
 
-## Project Structure
+The production frontend is written to `dist/`.
 
-```
-styfi/
-├── components/          # React components
-│   ├── Hero.tsx
-│   ├── Navbar.tsx
-│   ├── Marketplace.tsx
-│   ├── OutfitComposer.tsx
-│   ├── TrendDetector.tsx
-│   ├── VirtualTryOn.tsx
-│   ├── ImageEnhancer.tsx
-│   └── ProductCard.tsx
-├── services/           # API services
-│   └── geminiService.ts
-├── App.tsx            # Main application component
-├── types.ts           # TypeScript type definitions
-├── index.tsx          # Application entry point
-└── index.html         # HTML template
-```
+## Demo limitations
 
-## Environment Variables
-
-- `GEMINI_API_KEY` - Your Google Gemini API key for AI features
-
-## API Integration
-
-The application integrates with a Cloudflare Worker backend for AI processing:
-- Trend analysis
-- Outfit composition
-- Image enhancement
-- Virtual try-on generation
-
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-
-## Support
-
-For support, please contact us or open an issue in the repository.
+- Marketplace products are static sample data in `App.tsx`.
+- Prices, sellers and inventory are illustrative and are not connected to a commerce backend.
+- Trend scores and outfit suggestions are generated by the model and are not market measurements or verified purchasable listings.
+- Image generation depends on the configured Gemini image model, account access, quotas and billing.
