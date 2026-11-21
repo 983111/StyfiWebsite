@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Sparkles, TrendingUp, Camera, Wand2, Menu, X } from 'lucide-react';
+import { ShoppingBag, Sparkles, TrendingUp, Camera, Wand2, Menu, X, KeyRound } from 'lucide-react';
 import { AppView } from '../types';
 
 interface NavbarProps {
@@ -16,6 +16,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, setView }) => {
     { id: AppView.TREND_DETECTOR, label: 'Trend Detector', icon: TrendingUp },
     { id: AppView.VIRTUAL_TRY_ON, label: 'Virtual Try-On', icon: Camera },
     { id: AppView.IMAGE_ENHANCER, label: 'Seller Studio', icon: Wand2 },
+    { id: AppView.AI_SETTINGS, label: 'AI Settings', icon: KeyRound },
   ];
 
   return (
