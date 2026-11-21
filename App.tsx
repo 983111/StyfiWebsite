@@ -6,6 +6,7 @@ import OutfitComposer from './components/OutfitComposer';
 import TrendDetector from './components/TrendDetector';
 import VirtualTryOn from './components/VirtualTryOn';
 import ImageEnhancer from './components/ImageEnhancer';
+import AISettings from './components/AISettings';
 import { AppView, Product } from './types';
 
 /**
@@ -110,6 +111,8 @@ const App: React.FC = () => {
       
       case AppView.IMAGE_ENHANCER:
         return <ImageEnhancer />;
+      case AppView.AI_SETTINGS:
+        return <AISettings />;
       
       default:
         return <Hero setView={setCurrentView} />;
