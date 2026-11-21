@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "styfi-backend",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-11-20",
+  "workers_dev": true,
+  "vars": {
+    "GEMINI_MODEL": "gemini-3-flash-preview",
+    "APP_ORIGIN": "https://styfi-website.vercel.app"
+  }
+}
