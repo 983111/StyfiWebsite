@@ -29,6 +29,7 @@ export enum AppView {
   TREND_DETECTOR = 'TREND_DETECTOR',
   VIRTUAL_TRY_ON = 'VIRTUAL_TRY_ON',
   IMAGE_ENHANCER = 'IMAGE_ENHANCER',
+  AI_SETTINGS = 'AI_SETTINGS',
 }
 
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
