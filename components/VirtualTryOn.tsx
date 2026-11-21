@@ -7,7 +7,7 @@ interface VirtualTryOnProps {
   products: Product[];
 }
 
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ products }) => {
@@ -44,7 +44,7 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ products }) => {
     if (file.size > MAX_IMAGE_BYTES) {
       setUserImage(null);
       setUserImagePreview(null);
-      setError("Your photo must be 8 MB or smaller.");
+      setError("Your photo must be 6 MB or smaller.");
       return;
     }
 
@@ -118,7 +118,7 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ products }) => {
                 <>
                   <Upload className="w-10 h-10 text-rose-300 mb-2" />
                   <span className="text-sm text-gray-500">Choose a full-body photo</span>
-                  <span className="text-xs text-gray-400 mt-1">JPEG, PNG or WebP · up to 8 MB</span>
+                  <span className="text-xs text-gray-400 mt-1">JPEG, PNG or WebP · up to 6 MB</span>
                 </>
               )}
             </button>
