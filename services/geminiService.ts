@@ -5,6 +5,9 @@ const API_BASE_URL = (
   "https://styfi-backend.vishwajeetadkine705.workers.dev"
 ).replace(/\/$/, "");
 
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_TRYON_IMAGE_BYTES = 6 * 1024 * 1024;
+
 type ImageResult = { type: "image"; data: string } | { type: "guide"; data: string };
 
 interface ApiImageResponse {
@@ -58,7 +61,7 @@ export const fileToGenerativePart = async (file: File): Promise<string> => {
   if (!file.type.startsWith("image/")) {
     throw new Error("Please choose an image file.");
   }
-  if (file.size > 8 * 1024 * 1024) {
+  if (file.size > MAX_IMAGE_BYTES) {
     throw new Error("Images must be 8 MB or smaller.");
   }
 
@@ -96,7 +99,10 @@ export const composeOutfit = async (
   return data;
 };
 
-function parseImageResponse(data: ApiImageResponse, guideField: "enhancementGuide" | "visualizationGuide"): ImageResult {
+function parseImageResponse(
+  data: ApiImageResponse,
+  guideField: "enhancementGuide" | "visualizationGuide"
+): ImageResult {
   if (data.method === "imagen" && data.imageData) {
     return {
       type: "image",
@@ -129,7 +135,10 @@ export const enhanceProductImage = async (
   return parseImageResponse(data, "enhancementGuide");
 };
 
-async function fetchImageAsGenerativePart(imageUrl: string): Promise<{ data: string; mimeType: string }> {
+async function fetchImageAsGenerativePart(
+  imageUrl: string,
+  maxBytes = MAX_IMAGE_BYTES
+): Promise<{ data: string; mimeType: string }> {
   const response = await fetch(imageUrl);
   if (!response.ok) {
     throw new Error("Could not load the selected product image. Please try another product.");
@@ -140,8 +149,8 @@ async function fetchImageAsGenerativePart(imageUrl: string): Promise<{ data: str
   if (!mimeType.startsWith("image/")) {
     throw new Error("The selected product URL did not return an image.");
   }
-  if (blob.size > 8 * 1024 * 1024) {
-    throw new Error("The selected product image is larger than 8 MB.");
+  if (blob.size > maxBytes) {
+    throw new Error(`The selected product image must be ${Math.floor(maxBytes / (1024 * 1024))} MB or smaller.`);
   }
 
   const file = new File([blob], "styfi-product-image", { type: mimeType });
@@ -152,9 +161,13 @@ export const tryOnVirtual = async (
   userImage: File,
   productImage: string
 ): Promise<ImageResult> => {
+  if (userImage.size > MAX_TRYON_IMAGE_BYTES) {
+    throw new Error("For virtual try-on, your photo must be 6 MB or smaller.");
+  }
+
   const [userImageData, product] = await Promise.all([
     fileToGenerativePart(userImage),
-    fetchImageAsGenerativePart(productImage),
+    fetchImageAsGenerativePart(productImage, MAX_TRYON_IMAGE_BYTES),
   ]);
 
   const data = await postJson<ApiImageResponse>(
